@@ -122,25 +122,27 @@ class _ChequeDepositsScreenState extends State<ChequeDepositsScreen> {
         itemBuilder: (context, index) {
           Cheque cheque = depositedCheques[index];
 
-          return ListTile(
-            leading: Image.asset('assets/images/${cheque.chequeImageUri}'),
-            title: Text(
-                'Cheque No: ${cheque.chequeNo} - Amount: ${cheque.amount}'),
-            subtitle: Text(
-                'Deposit Date: ${cheque.depositDate?.toLocal().toString().split(" ")[0] ?? ""}'),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ElevatedButton(
-                  onPressed: () => markAsCashed(cheque),
-                  child: Text('Cashed'),
-                ),
-                SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () => markAsReturned(cheque),
-                  child: Text('Returned'),
-                ),
-              ],
+          return Expanded(
+            child: ListTile(
+              leading: Image.asset('assets/images/${cheque.chequeImageUri}'),
+              title: Text(
+                  'Cheque No: ${cheque.chequeNo} - Amount: ${cheque.amount}'),
+              subtitle: Text(
+                  'Deposit Date: ${cheque.depositDate?.toLocal().toString().split(" ")[0] ?? ""}'),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton(
+                    onPressed: () => markAsCashed(cheque),
+                    child: Text('Cashed'),
+                  ),
+                  SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () => markAsReturned(cheque),
+                    child: Text('Returned'),
+                  ),
+                ],
+              ),
             ),
           );
         },

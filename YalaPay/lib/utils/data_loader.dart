@@ -13,3 +13,9 @@ Future<List<String>> loadBanks() async {
   final List<dynamic> data = json.decode(response);
   return List<String>.from(data);
 }
+
+Future<List<String>> loadUsers() async {
+  final String response = await rootBundle.loadString('assets/data/banks.json');
+  final List<dynamic> data = json.decode(response);
+  return List<String>.from(data);
+}
