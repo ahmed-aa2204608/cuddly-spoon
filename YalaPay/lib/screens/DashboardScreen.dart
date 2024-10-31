@@ -89,7 +89,7 @@ class DashboardScreen extends StatelessWidget {
                 MaterialPageRoute(builder: (context) => Page1()),
               );
             },
-            child: Text("Go to Customer Management"),
+            child: Text("Customer Management"),
           ),
           ElevatedButton(
             onPressed: () {
@@ -98,7 +98,7 @@ class DashboardScreen extends StatelessWidget {
                 MaterialPageRoute(builder: (context) => InvoiceListScreen()),
               );
             },
-            child: Text("Go to Invoice List Screen"),
+            child: Text("Invoice List Screen"),
           ),
           ElevatedButton(
             onPressed: () {
