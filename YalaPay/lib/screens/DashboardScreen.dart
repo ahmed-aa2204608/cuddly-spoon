@@ -4,6 +4,7 @@ import 'package:YalaPay/screens/cheques_rep.dart';
 import 'package:YalaPay/screens/cheque_deposits_screen.dart';
 import 'package:flutter/material.dart';
 import 'page1.dart';
+import 'cheque_screen.dart'; // Import the ChequeScreen
 
 class DashboardScreen extends StatelessWidget {
   @override
@@ -67,7 +68,7 @@ class DashboardScreen extends StatelessWidget {
           ),
           Row(
             children: [
-              Text('Cashed'),
+              Text('Cashed: '),
               Text(
                 '44.44 QR',
                 style: TextStyle(color: Colors.green),
@@ -126,6 +127,15 @@ class DashboardScreen extends StatelessWidget {
               );
             },
             child: Text("Cheques Report"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ChequeScreen()),
+              );
+            },
+            child: Text("Cheque Screen"),
           ),
         ],
       ),

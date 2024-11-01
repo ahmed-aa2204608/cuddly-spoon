@@ -8,13 +8,29 @@ class ChequeDepositsScreen extends StatefulWidget {
 
 class _ChequeDepositsScreenState extends State<ChequeDepositsScreen> {
   List<Cheque> depositedCheques = [];
-  List<String> returnReasons = [];
+
+  // Hardcoded list of return reasons
+  final List<String> returnReasons = [
+    "No funds/insufficient funds",
+    "Cheque post-dated, please represent on due date",
+    "Drawer's signature differs",
+    "Alteration in date/words/figures requires drawer's full signature",
+    "Order cheque requires payee's endorsement",
+    "Not drawn on us",
+    "Drawer deceased/bankrupt",
+    "Account closed",
+    "Stopped by drawer due to cheque lost, bearer's bankruptcy or a judicial order",
+    "Date/beneficiary name is required",
+    "Presentment cycle expired",
+    "Already paid",
+    "Requires drawer's signature",
+    "Cheque information and electronic data mismatch"
+  ];
 
   @override
   void initState() {
     super.initState();
     loadCheques();
-    loadReturnReasons();
   }
 
   Future<void> loadCheques() async {
@@ -22,13 +38,6 @@ class _ChequeDepositsScreenState extends State<ChequeDepositsScreen> {
     setState(() {
       depositedCheques =
           cheques.where((cheque) => cheque.status == 'Deposited').toList();
-    });
-  }
-
-  Future<void> loadReturnReasons() async {
-    List<String> reasons = await Cheque.fetchReturnReasons();
-    setState(() {
-      returnReasons = reasons;
     });
   }
 
@@ -115,6 +124,8 @@ class _ChequeDepositsScreenState extends State<ChequeDepositsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(title: Text('Deposited Cheques')),
       body: ListView.builder(
@@ -122,26 +133,72 @@ class _ChequeDepositsScreenState extends State<ChequeDepositsScreen> {
         itemBuilder: (context, index) {
           Cheque cheque = depositedCheques[index];
 
-          return Expanded(
-            child: ListTile(
-              leading: Image.asset('assets/images/${cheque.chequeImageUri}'),
-              title: Text(
-                  'Cheque No: ${cheque.chequeNo} - Amount: ${cheque.amount}'),
-              subtitle: Text(
-                  'Deposit Date: ${cheque.depositDate?.toLocal().toString().split(" ")[0] ?? ""}'),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ElevatedButton(
-                    onPressed: () => markAsCashed(cheque),
-                    child: Text('Cashed'),
-                  ),
-                  SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () => markAsReturned(cheque),
-                    child: Text('Returned'),
-                  ),
-                ],
+          return Padding(
+            padding: EdgeInsets.symmetric(
+                horizontal: screenWidth * 0.05, vertical: 8.0),
+            child: Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Padding(
+                padding: EdgeInsets.all(screenWidth * 0.03),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: screenWidth * 0.2,
+                          height: screenWidth * 0.2,
+                          child: Image.asset(
+                            'assets/images/${cheque.chequeImageUri}',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        SizedBox(width: screenWidth * 0.05),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Cheque No: ${cheque.chequeNo}',
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.04,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                'Amount: ${cheque.amount}',
+                                style: TextStyle(fontSize: screenWidth * 0.035),
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                'Deposit Date: ${cheque.depositDate?.toLocal().toString().split(" ")[0] ?? ""}',
+                                style: TextStyle(fontSize: screenWidth * 0.035),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () => markAsCashed(cheque),
+                          child: Text('Cashed'),
+                        ),
+                        SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () => markAsReturned(cheque),
+                          child: Text('Returned'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           );

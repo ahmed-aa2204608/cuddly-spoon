@@ -34,6 +34,13 @@ class _ChequeScreenState extends State<ChequeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+    double fontSize = screenWidth * 0.04;
+    double padding = screenWidth * 0.05;
+    double margin = screenWidth * 0.04;
+    double cardPadding = screenWidth * 0.03;
+    double buttonFontSize = screenWidth * 0.035;
+
     return Scaffold(
       appBar: AppBar(title: Text('Awaiting Cheques')),
       body: Column(
@@ -51,29 +58,83 @@ class _ChequeScreenState extends State<ChequeScreen> {
                     ? '(+$remainingDays)'
                     : '($remainingDays)';
 
-                return ListTile(
-                  title: Text(
-                      'Cheque No: ${cheque.chequeNo} - Amount: ${cheque.amount}'),
-                  subtitle: Text(
-                    'Due Date: ${cheque.dueDate.toLocal().toString().split(" ")[0]} $dateDisplay',
-                    style: TextStyle(color: dateColor),
-                  ),
-                  trailing: ElevatedButton(
-                    onPressed: () => markAsDeposited(cheque),
-                    child: Text('Mark as Deposited'),
+                return Card(
+                  margin: EdgeInsets.symmetric(
+                      vertical: margin / 2, horizontal: margin),
+                  child: Padding(
+                    padding: EdgeInsets.all(cardPadding),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Cheque No: ${cheque.chequeNo}',
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: padding / 2),
+                        Text('Amount: ${cheque.amount} QR',
+                            style: TextStyle(fontSize: fontSize * 0.9)),
+                        SizedBox(height: padding / 4),
+                        Text('Bank Name: ${cheque.bankName}',
+                            style: TextStyle(fontSize: fontSize * 0.9)),
+                        SizedBox(height: padding / 4),
+                        Text('Drawer: ${cheque.drawer}',
+                            style: TextStyle(fontSize: fontSize * 0.9)),
+                        SizedBox(height: padding / 4),
+                        Text(
+                          'Received Date: ${cheque.receivedDate.toLocal().toString().split(" ")[0]}',
+                          style: TextStyle(fontSize: fontSize * 0.9),
+                        ),
+                        SizedBox(height: padding / 4),
+                        Text(
+                          'Due Date: ${cheque.dueDate.toLocal().toString().split(" ")[0]} $dateDisplay',
+                          style: TextStyle(
+                              color: dateColor, fontSize: fontSize * 0.9),
+                        ),
+                        SizedBox(height: padding),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton(
+                            onPressed: () => markAsDeposited(cheque),
+                            style: ElevatedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: padding * 0.8,
+                                  vertical: padding * 0.4),
+                            ),
+                            child: Text(
+                              'Mark as Deposited',
+                              style: TextStyle(fontSize: buttonFontSize),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 );
               },
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => ChequeDepositsScreen()),
-              );
-            },
-            child: Text('Go to Deposited Cheques'),
+          Padding(
+            padding: EdgeInsets.all(padding),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ChequeDepositsScreen()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                    horizontal: padding * 1.5, vertical: padding * 0.6),
+              ),
+              child: Text(
+                'Go to Deposited Cheques',
+                style: TextStyle(fontSize: buttonFontSize),
+              ),
+            ),
           ),
         ],
       ),
