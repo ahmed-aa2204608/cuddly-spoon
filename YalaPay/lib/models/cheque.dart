@@ -1,19 +1,12 @@
-import 'dart:convert';
-import 'package:flutter/services.dart';
-
 class Cheque {
-  final int chequeNo;
-  final double amount;
-  final String drawer;
-  final String bankName;
+  int chequeNo;
+  double amount;
+  String drawer;
+  String bankName;
   String status;
-  final DateTime receivedDate;
-  final DateTime dueDate;
-  final String chequeImageUri;
-  String? returnReason;
-  DateTime? depositDate;
-  DateTime? cashedDate;
-  DateTime? returnDate;
+  DateTime receivedDate;
+  DateTime dueDate;
+  String chequeImageUri;
 
   Cheque({
     required this.chequeNo,
@@ -24,10 +17,6 @@ class Cheque {
     required this.receivedDate,
     required this.dueDate,
     required this.chequeImageUri,
-    this.returnReason,
-    this.depositDate,
-    this.cashedDate,
-    this.returnDate,
   });
 
   factory Cheque.fromJson(Map<String, dynamic> json) {
@@ -43,16 +32,21 @@ class Cheque {
     );
   }
 
-  static Future<List<Cheque>> fetchCheques() async {
-    final String response =
-        await rootBundle.loadString('assets/data/cheques.json');
-    final List<dynamic> data = json.decode(response);
-    return data.map((json) => Cheque.fromJson(json)).toList();
+  Map<String, dynamic> toJson() {
+    return {
+      'chequeNo': chequeNo,
+      'amount': amount,
+      'drawer': drawer,
+      'bankName': bankName,
+      'status': status,
+      'receivedDate': receivedDate,
+      'dueDate': dueDate,
+      'chequeImageUri': chequeImageUri,
+    };
   }
 
-  static Future<List<String>> fetchReturnReasons() async {
-    final String response =
-        await rootBundle.loadString('assets/data/return-reasons.json');
-    return List<String>.from(json.decode(response));
+  void updateStatus(String newStatus, DateTime newReceivedDate) {
+    status = newStatus;
+    receivedDate = newReceivedDate;
   }
 }

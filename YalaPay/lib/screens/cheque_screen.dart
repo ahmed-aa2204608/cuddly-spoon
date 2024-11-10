@@ -1,6 +1,9 @@
-import 'package:YalaPay/models/cheque.dart';
-import 'package:YalaPay/screens/cheque_deposits_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import '../models/cheque.dart';
+import 'cheque_deposits_screen.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart';
 
 class ChequeScreen extends StatefulWidget {
   @override
@@ -8,135 +11,163 @@ class ChequeScreen extends StatefulWidget {
 }
 
 class _ChequeScreenState extends State<ChequeScreen> {
-  List<Cheque> awaitingCheques = [];
+  List<Cheque> cheques = [];
+  List<int> selectedChequeNos = [];
+  List<String> bankAccounts = [];
+  String? selectedBankAccount;
 
   @override
   void initState() {
     super.initState();
     loadCheques();
+    loadBankAccounts();
   }
 
   Future<void> loadCheques() async {
-    List<Cheque> cheques = await Cheque.fetchCheques();
+    final String response =
+        await rootBundle.loadString('assets/data/cheques.json');
+    final List<dynamic> data = json.decode(response);
+
     setState(() {
-      awaitingCheques =
-          cheques.where((cheque) => cheque.status == 'Awaiting').toList();
+      cheques = data.map((item) => Cheque.fromJson(item)).toList();
     });
   }
 
-  void markAsDeposited(Cheque cheque) {
+  Future<void> loadBankAccounts() async {
+    final String response =
+        await rootBundle.loadString('assets/data/bank-accounts.json');
+    final List<dynamic> data = json.decode(response);
+
     setState(() {
-      cheque.status = 'Deposited';
-      cheque.depositDate = DateTime.now();
-      awaitingCheques.remove(cheque);
+      bankAccounts = data.map<String>((item) => item['bank']).toList();
+    });
+  }
+
+  void depositSelectedCheques() {
+    setState(() {
+      for (var cheque in cheques) {
+        if (selectedChequeNos.contains(cheque.chequeNo) &&
+            cheque.status == 'Awaiting') {
+          cheque.updateStatus('Deposited', DateTime.now());
+        }
+      }
+      selectedChequeNos.clear();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double fontSize = screenWidth * 0.04;
-    double padding = screenWidth * 0.05;
-    double margin = screenWidth * 0.04;
-    double cardPadding = screenWidth * 0.03;
-    double buttonFontSize = screenWidth * 0.035;
+    DateTime today = DateTime.now();
+    List<Cheque> awaitingCheques =
+        cheques.where((cheque) => cheque.status == 'Awaiting').toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text('Awaiting Cheques')),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              itemCount: awaitingCheques.length,
-              itemBuilder: (context, index) {
-                Cheque cheque = awaitingCheques[index];
-                int remainingDays =
-                    cheque.dueDate.difference(DateTime.now()).inDays;
-                Color dateColor =
-                    remainingDays >= 0 ? Colors.green : Colors.red;
-                String dateDisplay = remainingDays >= 0
-                    ? '(+$remainingDays)'
-                    : '($remainingDays)';
+      appBar: AppBar(
+        title: Text('Awaiting Cheques'),
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Column(
+            children: [
+              Expanded(
+                child: ListView.builder(
+                  itemCount: awaitingCheques.length,
+                  itemBuilder: (context, index) {
+                    Cheque cheque = awaitingCheques[index];
+                    int remainingDays = cheque.dueDate.difference(today).inDays;
+                    Color daysColor =
+                        remainingDays >= 0 ? Colors.green : Colors.red;
 
-                return Card(
-                  margin: EdgeInsets.symmetric(
-                      vertical: margin / 2, horizontal: margin),
-                  child: Padding(
-                    padding: EdgeInsets.all(cardPadding),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Cheque No: ${cheque.chequeNo}',
-                          style: TextStyle(
-                            fontSize: fontSize,
-                            fontWeight: FontWeight.bold,
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 4.0, horizontal: 8.0),
+                      child: Card(
+                        child: ListTile(
+                          leading: Checkbox(
+                            value: selectedChequeNos.contains(cheque.chequeNo),
+                            onChanged: (bool? value) {
+                              setState(() {
+                                if (value == true) {
+                                  selectedChequeNos.add(cheque.chequeNo);
+                                } else {
+                                  selectedChequeNos.remove(cheque.chequeNo);
+                                }
+                              });
+                            },
+                          ),
+                          title: Text('Drawer: ${cheque.drawer}'),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Bank: ${cheque.bankName}'),
+                              Text('Cheque No: ${cheque.chequeNo}'),
+                              Text(
+                                  'Amount: ${cheque.amount.toStringAsFixed(2)}'),
+                              Text(
+                                'Due Date: ${DateFormat('dd/MM/yyyy').format(cheque.dueDate)} (${remainingDays >= 0 ? '+' : ''}$remainingDays)',
+                                style: TextStyle(color: daysColor),
+                              ),
+                            ],
                           ),
                         ),
-                        SizedBox(height: padding / 2),
-                        Text('Amount: ${cheque.amount} QR',
-                            style: TextStyle(fontSize: fontSize * 0.9)),
-                        SizedBox(height: padding / 4),
-                        Text('Bank Name: ${cheque.bankName}',
-                            style: TextStyle(fontSize: fontSize * 0.9)),
-                        SizedBox(height: padding / 4),
-                        Text('Drawer: ${cheque.drawer}',
-                            style: TextStyle(fontSize: fontSize * 0.9)),
-                        SizedBox(height: padding / 4),
-                        Text(
-                          'Received Date: ${cheque.receivedDate.toLocal().toString().split(" ")[0]}',
-                          style: TextStyle(fontSize: fontSize * 0.9),
-                        ),
-                        SizedBox(height: padding / 4),
-                        Text(
-                          'Due Date: ${cheque.dueDate.toLocal().toString().split(" ")[0]} $dateDisplay',
-                          style: TextStyle(
-                              color: dateColor, fontSize: fontSize * 0.9),
-                        ),
-                        SizedBox(height: padding),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton(
-                            onPressed: () => markAsDeposited(cheque),
-                            style: ElevatedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: padding * 0.8,
-                                  vertical: padding * 0.4),
-                            ),
-                            child: Text(
-                              'Mark as Deposited',
-                              style: TextStyle(fontSize: buttonFontSize),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DropdownButton<String>(
+                      value: selectedBankAccount,
+                      hint: Text('Select Bank Account'),
+                      isExpanded: true,
+                      items: bankAccounts.map((String account) {
+                        return DropdownMenuItem<String>(
+                          value: account,
+                          child: Text(account),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedBankAccount = newValue;
+                        });
+                      },
                     ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(padding),
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => ChequeDepositsScreen()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                    horizontal: padding * 1.5, vertical: padding * 0.6),
+                    SizedBox(height: 10), // Space between dropdown and buttons
+                    ElevatedButton(
+                      onPressed: depositSelectedCheques,
+                      child: Text('Deposit Selected Cheques'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(double.infinity, 50),
+                      ),
+                    ),
+                    SizedBox(height: 10), // Space between the buttons
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChequeDepositsScreen(
+                              cheques: cheques,
+                            ),
+                          ),
+                        );
+                      },
+                      child: Text('Go to Deposited Cheques'),
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: Size(double.infinity, 50),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              child: Text(
-                'Go to Deposited Cheques',
-                style: TextStyle(fontSize: buttonFontSize),
-              ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

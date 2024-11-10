@@ -1,207 +1,188 @@
-import 'package:YalaPay/models/cheque.dart';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../models/cheque.dart';
+import 'package:intl/intl.dart';
 
 class ChequeDepositsScreen extends StatefulWidget {
+  final List<Cheque> cheques;
+
+  ChequeDepositsScreen({required this.cheques});
+
   @override
   _ChequeDepositsScreenState createState() => _ChequeDepositsScreenState();
 }
 
 class _ChequeDepositsScreenState extends State<ChequeDepositsScreen> {
-  List<Cheque> depositedCheques = [];
-
-  // Hardcoded list of return reasons
-  final List<String> returnReasons = [
-    "No funds/insufficient funds",
-    "Cheque post-dated, please represent on due date",
-    "Drawer's signature differs",
-    "Alteration in date/words/figures requires drawer's full signature",
-    "Order cheque requires payee's endorsement",
-    "Not drawn on us",
-    "Drawer deceased/bankrupt",
-    "Account closed",
-    "Stopped by drawer due to cheque lost, bearer's bankruptcy or a judicial order",
-    "Date/beneficiary name is required",
-    "Presentment cycle expired",
-    "Already paid",
-    "Requires drawer's signature",
-    "Cheque information and electronic data mismatch"
-  ];
+  List<String> returnReasons = [];
 
   @override
   void initState() {
     super.initState();
-    loadCheques();
+    loadReturnReasons();
   }
 
-  Future<void> loadCheques() async {
-    List<Cheque> cheques = await Cheque.fetchCheques();
+  Future<void> loadReturnReasons() async {
+    final String response =
+        await rootBundle.loadString('assets/data/return-reasons.json');
+    final List<dynamic> data = json.decode(response);
+
     setState(() {
-      depositedCheques =
-          cheques.where((cheque) => cheque.status == 'Deposited').toList();
+      returnReasons = data.cast<String>();
     });
   }
 
-  void markAsCashed(Cheque cheque) {
-    setState(() {
-      cheque.status = 'Cashed';
-      cheque.cashedDate = DateTime.now();
-      depositedCheques.remove(cheque);
-    });
-  }
+  void updateChequeStatus(Cheque cheque, String status) async {
+    DateTime today = DateTime.now();
+    if (status == 'Returned') {
+      TextEditingController dateController = TextEditingController();
+      String? selectedReason;
 
-  void markAsReturned(Cheque cheque) async {
-    String? selectedReason;
-    DateTime returnDate = DateTime.now();
-
-    await showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text('Return Cheque'),
-              content: Column(
+      await showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text('Return Cheque'),
+            content: SingleChildScrollView(
+              child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Select Return Date:'),
-                  ElevatedButton(
-                    onPressed: () async {
-                      DateTime? pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: DateTime.now(),
-                        firstDate: DateTime(2023),
-                        lastDate: DateTime(2025),
-                      );
-                      if (pickedDate != null) {
-                        setState(() {
-                          returnDate = pickedDate;
-                        });
-                      }
-                    },
-                    child: Text(returnDate.toLocal().toString().split(" ")[0]),
+                  TextField(
+                    controller: dateController,
+                    decoration:
+                        const InputDecoration(labelText: 'Date: (YYYY-MM-DD)'),
                   ),
-                  DropdownButton<String>(
-                    hint: Text("Select Return Reason"),
-                    value: selectedReason,
+                  SizedBox(height: 15),
+                  DropdownButtonFormField<String>(
+                    decoration:
+                        InputDecoration(labelText: 'Select Return Reason'),
+                    isExpanded: true,
                     items: returnReasons.map((reason) {
-                      return DropdownMenuItem(
-                          value: reason, child: Text(reason));
+                      return DropdownMenuItem<String>(
+                        value: reason,
+                        child: Text(reason),
+                      );
                     }).toList(),
                     onChanged: (value) {
-                      setState(() {
-                        selectedReason = value;
-                      });
+                      selectedReason = value;
                     },
                   ),
                 ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    if (selectedReason != null) {
-                      setState(() {
-                        cheque.status = 'Returned';
-                        cheque.returnDate = returnDate;
-                        cheque.returnReason = selectedReason;
-                        depositedCheques.remove(cheque);
-                      });
-                      Navigator.of(context).pop();
-                    }
-                  },
-                  child: Text('Return'),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text('Cancel'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  if (dateController.text.isNotEmpty &&
+                      selectedReason != null) {
+                    setState(() {
+                      cheque.updateStatus(
+                          status, DateTime.parse(dateController.text));
+                    });
+                    Navigator.pop(context);
+                  }
+                },
+                child: Text('Submit'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      setState(() {
+        cheque.updateStatus(status, today);
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
+    List<Cheque> depositedCheques =
+        widget.cheques.where((cheque) => cheque.status == 'Deposited').toList();
 
     return Scaffold(
-      appBar: AppBar(title: Text('Deposited Cheques')),
-      body: ListView.builder(
-        itemCount: depositedCheques.length,
-        itemBuilder: (context, index) {
-          Cheque cheque = depositedCheques[index];
+      appBar: AppBar(
+        title: Text('Deposited Cheques'),
+      ),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return depositedCheques.isNotEmpty
+              ? ListView.builder(
+                  itemCount: depositedCheques.length,
+                  itemBuilder: (context, index) {
+                    Cheque cheque = depositedCheques[index];
 
-          return Padding(
-            padding: EdgeInsets.symmetric(
-                horizontal: screenWidth * 0.05, vertical: 8.0),
-            child: Card(
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(screenWidth * 0.03),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: screenWidth * 0.2,
-                          height: screenWidth * 0.2,
-                          child: Image.asset(
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 4.0, horizontal: 8.0),
+                      child: Card(
+                        child: ListTile(
+                          contentPadding: EdgeInsets.all(8.0),
+                          leading: Image.asset(
                             'assets/images/${cheque.chequeImageUri}',
+                            width: 50,
+                            height: 50,
                             fit: BoxFit.cover,
                           ),
-                        ),
-                        SizedBox(width: screenWidth * 0.05),
-                        Expanded(
-                          child: Column(
+                          title: Text(
+                            'Drawer: ${cheque.drawer}',
+                            style: TextStyle(
+                                fontSize: constraints.maxWidth > 600 ? 18 : 14),
+                          ),
+                          subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
                                 'Cheque No: ${cheque.chequeNo}',
                                 style: TextStyle(
-                                  fontSize: screenWidth * 0.04,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                    fontSize:
+                                        constraints.maxWidth > 600 ? 16 : 12),
                               ),
-                              SizedBox(height: 5),
                               Text(
-                                'Amount: ${cheque.amount}',
-                                style: TextStyle(fontSize: screenWidth * 0.035),
+                                'Amount: ${cheque.amount.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                    fontSize:
+                                        constraints.maxWidth > 600 ? 16 : 12),
                               ),
-                              SizedBox(height: 5),
                               Text(
-                                'Deposit Date: ${cheque.depositDate?.toLocal().toString().split(" ")[0] ?? ""}',
-                                style: TextStyle(fontSize: screenWidth * 0.035),
+                                'Received Date: ${DateFormat('dd/MM/yyyy').format(cheque.receivedDate)}',
+                                style: TextStyle(
+                                    fontSize:
+                                        constraints.maxWidth > 600 ? 16 : 12),
                               ),
                             ],
                           ),
+                          trailing: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                TextButton(
+                                  onPressed: () =>
+                                      updateChequeStatus(cheque, 'Cashed'),
+                                  child: Text('Cashed',
+                                      style: TextStyle(fontSize: 14)),
+                                ),
+                                TextButton(
+                                  onPressed: () =>
+                                      updateChequeStatus(cheque, 'Returned'),
+                                  child: Text('Returned',
+                                      style: TextStyle(fontSize: 14)),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        ElevatedButton(
-                          onPressed: () => markAsCashed(cheque),
-                          child: Text('Cashed'),
-                        ),
-                        SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () => markAsReturned(cheque),
-                          child: Text('Returned'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
+                      ),
+                    );
+                  },
+                )
+              : Center(
+                  child: Text(
+                    'No Deposited Cheques Available',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                );
         },
       ),
     );
