@@ -105,15 +105,6 @@ class DashboardScreen extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => ChequeDepositsScreen()),
-              );
-            },
-            child: Text("Cheque Deposits"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
                 MaterialPageRoute(builder: (context) => InvoicesRep()),
               );
             },
