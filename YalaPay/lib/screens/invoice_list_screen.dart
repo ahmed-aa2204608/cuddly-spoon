@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/invoice_provider.dart';
 import 'invoice_detail_screen.dart';
-import '../models/Invoice.dart';
+import '../models/invoice.dart';
 
 class InvoiceListScreen extends ConsumerStatefulWidget {
+  const InvoiceListScreen({super.key});
+
   @override
-  _InvoiceListScreenState createState() => _InvoiceListScreenState();
+  ConsumerState<InvoiceListScreen> createState() => _invoiceListScreenState();
 }
 
 class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
@@ -14,7 +16,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final invoices = ref.watch(invoiceProvider);
+    final invoices = ref.watch(invoiceNotifierProvider);
     final filteredInvoices = invoices.where((invoice) {
       return invoice.customerName
           .toLowerCase()
@@ -98,15 +100,15 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
 
   void _showUpdateInvoiceDialog(
       BuildContext context, WidgetRef ref, Invoice invoice) {
-    final _customerIdController =
+    final customerIdController =
         TextEditingController(text: invoice.customerId);
-    final _customerNameController =
+    final customerNameController =
         TextEditingController(text: invoice.customerName);
-    final _amountController =
+    final amountController =
         TextEditingController(text: invoice.amount.toString());
-    final _invoiceDateController = TextEditingController(
+    final invoiceDateController = TextEditingController(
         text: invoice.invoiceDate.toIso8601String().split('T').first);
-    final _dueDateController = TextEditingController(
+    final dueDateController = TextEditingController(
         text: invoice.dueDate.toIso8601String().split('T').first);
 
     showDialog(
@@ -118,25 +120,25 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
             child: Column(
               children: [
                 TextField(
-                  controller: _customerIdController,
+                  controller: customerIdController,
                   decoration: InputDecoration(labelText: 'Customer ID'),
                 ),
                 TextField(
-                  controller: _customerNameController,
+                  controller: customerNameController,
                   decoration: InputDecoration(labelText: 'Customer Name'),
                 ),
                 TextField(
-                  controller: _amountController,
+                  controller: amountController,
                   decoration: InputDecoration(labelText: 'Amount'),
                   keyboardType: TextInputType.number,
                 ),
                 TextField(
-                  controller: _invoiceDateController,
+                  controller: invoiceDateController,
                   decoration:
                       InputDecoration(labelText: 'Invoice Date (YYYY-MM-DD)'),
                 ),
                 TextField(
-                  controller: _dueDateController,
+                  controller: dueDateController,
                   decoration:
                       InputDecoration(labelText: 'Due Date (YYYY-MM-DD)'),
                 ),
@@ -153,11 +155,11 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
               onPressed: () {
                 final updatedInvoice = Invoice(
                   id: invoice.id,
-                  customerId: _customerIdController.text,
-                  customerName: _customerNameController.text,
-                  amount: double.tryParse(_amountController.text) ?? 0.0,
-                  invoiceDate: DateTime.parse(_invoiceDateController.text),
-                  dueDate: DateTime.parse(_dueDateController.text),
+                  customerId: customerIdController.text,
+                  customerName: customerNameController.text,
+                  amount: double.tryParse(amountController.text) ?? 0.0,
+                  invoiceDate: DateTime.parse(invoiceDateController.text),
+                  dueDate: DateTime.parse(dueDateController.text),
                 );
 
                 ref
@@ -198,11 +200,11 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
   }
 
   void _showAddInvoiceDialog(BuildContext context, WidgetRef ref) {
-    final _customerIdController = TextEditingController();
-    final _customerNameController = TextEditingController();
-    final _amountController = TextEditingController();
-    final _invoiceDateController = TextEditingController();
-    final _dueDateController = TextEditingController();
+    final customerIdController = TextEditingController();
+    final customerNameController = TextEditingController();
+    final amountController = TextEditingController();
+    final invoiceDateController = TextEditingController();
+    final dueDateController = TextEditingController();
 
     showDialog(
       context: context,
@@ -213,25 +215,25 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
             child: Column(
               children: [
                 TextField(
-                  controller: _customerIdController,
+                  controller: customerIdController,
                   decoration: InputDecoration(labelText: 'Customer ID'),
                 ),
                 TextField(
-                  controller: _customerNameController,
+                  controller: customerNameController,
                   decoration: InputDecoration(labelText: 'Customer Name'),
                 ),
                 TextField(
-                  controller: _amountController,
+                  controller: amountController,
                   decoration: InputDecoration(labelText: 'Amount'),
                   keyboardType: TextInputType.number,
                 ),
                 TextField(
-                  controller: _invoiceDateController,
+                  controller: invoiceDateController,
                   decoration:
                       InputDecoration(labelText: 'Invoice Date (YYYY-MM-DD)'),
                 ),
                 TextField(
-                  controller: _dueDateController,
+                  controller: dueDateController,
                   decoration:
                       InputDecoration(labelText: 'Due Date (YYYY-MM-DD)'),
                 ),
@@ -248,11 +250,11 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
               onPressed: () {
                 final newInvoice = Invoice(
                   id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  customerId: _customerIdController.text,
-                  customerName: _customerNameController.text,
-                  amount: double.tryParse(_amountController.text) ?? 0.0,
-                  invoiceDate: DateTime.parse(_invoiceDateController.text),
-                  dueDate: DateTime.parse(_dueDateController.text),
+                  customerId: customerIdController.text,
+                  customerName: customerNameController.text,
+                  amount: double.tryParse(amountController.text) ?? 0.0,
+                  invoiceDate: DateTime.parse(invoiceDateController.text),
+                  dueDate: DateTime.parse(dueDateController.text),
                 );
 
                 ref.read(invoiceProvider.notifier).addInvoice(newInvoice);
