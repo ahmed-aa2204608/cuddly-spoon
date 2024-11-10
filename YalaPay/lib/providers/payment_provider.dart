@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/payment.dart';
+import '../models/Invoice.dart';
 
 class PaymentNotifier extends StateNotifier<List<Payment>> {
   PaymentNotifier() : super([]);

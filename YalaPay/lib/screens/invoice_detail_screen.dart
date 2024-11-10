@@ -313,6 +313,8 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         ref
                             .read(paymentProvider.notifier)
                             .addPayment(newPayment);
+                        widget.invoice.amount =
+                            widget.invoice.amount - newPayment.amount;
                       } else {
                         ref
                             .read(paymentProvider.notifier)

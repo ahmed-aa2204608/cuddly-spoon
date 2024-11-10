@@ -11,7 +11,8 @@ class InvoiceNotifier extends StateNotifier<List<Invoice>> {
   final Ref ref;
 
   Future<void> loadInvoices() async {
-    final String response = await rootBundle.loadString('assets/invoices.json');
+    final String response =
+        await rootBundle.loadString('assets/data/invoices.json');
     final List<dynamic> data = json.decode(response);
     final invoices = data.map((invoice) => Invoice.fromJson(invoice)).toList();
 
