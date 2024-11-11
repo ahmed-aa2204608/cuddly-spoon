@@ -1,18 +1,17 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:YalaPay/models/cheque.dart';
+import 'package:YalaPay/models/cheques.dart';
 
-class ChequesNotifier extends Notifier<List<Cheque>> {
-  List<Cheque> _allCheques = [];
-  List<Cheque> depositedCheques = [];
+class ChequesNotifier extends Notifier<List<Cheques>> {
+  List<Cheques> _allCheques = [];
   String selectedStatus = 'All';
   DateTime? startDate;
   DateTime? endDate;
 
   @override
-  List<Cheque> build() {
-    readAllCheques();
+  List<Cheques> build() {
+    initializeCheques();
     return [];
   }
 
@@ -26,14 +25,14 @@ class ChequesNotifier extends Notifier<List<Cheque>> {
     };
   }
 
-  Future<void> readAllCheques() async {
+  Future<void> initializeCheques() async {
     String data = await rootBundle.loadString('assets/data/cheques.json');
     var chequesMap = jsonDecode(data);
-    _allCheques = chequesMap
-        .map<Cheque>((chequeMap) => Cheque.fromJson(chequeMap))
-        .toList();
-    depositedCheques =
-        _allCheques.where((cheque) => cheque.status == 'Deposited').toList();
+    List<Cheques> cheques = [];
+    for (var chequeMap in chequesMap) {
+      cheques.add(Cheques.fromJson(chequeMap));
+    }
+    _allCheques = cheques;
     state = _allCheques;
   }
 
@@ -49,7 +48,7 @@ class ChequesNotifier extends Notifier<List<Cheque>> {
   }
 
   void filterCheques() {
-    List<Cheque> filteredCheques = _allCheques;
+    List<Cheques> filteredCheques = _allCheques;
 
     if (selectedStatus != 'All') {
       filteredCheques = filteredCheques
@@ -59,7 +58,7 @@ class ChequesNotifier extends Notifier<List<Cheque>> {
 
     if (startDate != null && endDate != null) {
       filteredCheques = filteredCheques.where((cheque) {
-        final chequeDate = cheque.dueDate;
+        final chequeDate = DateTime.parse(cheque.receivedDate);
         return chequeDate
                 .isAfter(startDate!.subtract(const Duration(days: 1))) &&
             chequeDate.isBefore(endDate!.add(const Duration(days: 1)));
@@ -68,20 +67,7 @@ class ChequesNotifier extends Notifier<List<Cheque>> {
 
     state = filteredCheques;
   }
-
-  void markAsDeposited(Cheque cheque) {
-    cheque.status = 'Deposited';
-  }
-
-  void markAsCashed(Cheque cheque) {
-    cheque.status = 'Cashed';
-  }
-
-  void markAsReturned(Cheque cheque, DateTime returnDate) {
-    cheque.status = 'Returned';
-    cheque.dueDate = returnDate;
-  }
 }
 
 final chequeNotifierProvider =
-    NotifierProvider<ChequesNotifier, List<Cheque>>(() => ChequesNotifier());
+    NotifierProvider<ChequesNotifier, List<Cheques>>(() => ChequesNotifier());

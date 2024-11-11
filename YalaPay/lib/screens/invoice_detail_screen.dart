@@ -244,16 +244,21 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         },
                       ),
                       Text('Status: Awaiting',
-                          style: TextStyle(color: Colors.grey)),
+                          style: const TextStyle(
+                              fontSize: 15, fontFamily: 'CustomFont')),
                       Text('Received Date: ${formatDate(DateTime.now())}'),
                       TextField(
+                        style: const TextStyle(
+                            fontSize: 15, fontFamily: 'CustomFont'),
                         controller: _dueDateController,
                         decoration:
                             InputDecoration(labelText: 'Due Date (YYYY-MM-DD)'),
                       ),
                       TextButton.icon(
                         icon: Icon(Icons.image),
-                        label: Text('Upload Cheque Image'),
+                        label: Text('Upload Cheque Image',
+                            style: const TextStyle(
+                                fontSize: 15, fontFamily: 'CustomFont')),
                         onPressed: _pickImage,
                       ),
                       if (_chequeImage != null)
@@ -262,6 +267,8 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                     if (_selectedPaymentMode == 'Bank transfer' ||
                         _selectedPaymentMode == 'Credit card') ...[
                       TextField(
+                        style: const TextStyle(
+                            fontSize: 15, fontFamily: 'CustomFont'),
                         controller: _amountController,
                         decoration: InputDecoration(labelText: 'Amount'),
                         keyboardType: TextInputType.number,
@@ -276,8 +283,10 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 TextButton(
-                  child:
-                      Text(payment == null ? 'Add Payment' : 'Update Payment'),
+                  child: Text(
+                      payment == null ? 'Add Payment' : 'Update Payment',
+                      style: const TextStyle(
+                          fontSize: 15, fontFamily: 'CustomFont')),
                   onPressed: () {
                     try {
                       final newPayment = Payment(

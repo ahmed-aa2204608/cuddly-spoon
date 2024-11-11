@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/invoice_provider.dart';
 import 'invoice_detail_screen.dart';
-import '../models/invoice.dart';
+import '../models/Invoice.dart';
 
 class InvoiceListScreen extends ConsumerStatefulWidget {
   const InvoiceListScreen({super.key});
 
   @override
-  ConsumerState<InvoiceListScreen> createState() => _invoiceListScreenState();
+  ConsumerState<InvoiceListScreen> createState() => _InvoiceListScreenState();
 }
 
 class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
@@ -16,7 +16,7 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final invoices = ref.watch(invoiceNotifierProvider);
+    final invoices = ref.watch(invoiceProvider);
     final filteredInvoices = invoices.where((invoice) {
       return invoice.customerName
           .toLowerCase()
