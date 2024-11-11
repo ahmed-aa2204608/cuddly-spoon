@@ -229,6 +229,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         decoration: InputDecoration(labelText: 'Drawer'),
                       ),
                       DropdownButtonFormField<String>(
+                        isExpanded: true,
                         value: _selectedBank,
                         decoration: InputDecoration(labelText: 'Drawer Bank'),
                         items: banks.map((String bank) {
