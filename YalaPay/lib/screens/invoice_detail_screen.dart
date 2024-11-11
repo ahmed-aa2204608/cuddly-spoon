@@ -72,6 +72,14 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     return "$month/$day/$year";
   }
 
+  double calculateBalance() {
+    final totalPayments = allPayments.fold<double>(
+      0.0,
+      (sum, payment) => sum + payment.amount,
+    );
+    return widget.invoice.amount - totalPayments;
+  }
+
   @override
   Widget build(BuildContext context) {
     allPayments = ref
@@ -92,7 +100,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                 ListTile(
                   title: Text('Customer: ${widget.invoice.customerName}'),
                   subtitle: Text(
-                      'Amount: ${widget.invoice.amount}, Balance: ${widget.invoice.balance}'),
+                      'Amount: ${widget.invoice.amount}, Balance: ${calculateBalance()}'),
                 ),
                 Divider(),
                 Padding(
@@ -228,6 +236,10 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                           if (amount == null || amount <= 0) {
                             return 'Enter a valid positive amount';
                           }
+                          final remainingBalance = calculateBalance();
+                          if (amount > remainingBalance) {
+                            return 'Amount cannot exceed remaining balance of $remainingBalance';
+                          }
                           return null;
                         },
                       ),
@@ -343,7 +355,6 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         ref
                             .read(paymentProvider.notifier)
                             .addPayment(newPayment);
-                        widget.invoice.amount -= newPayment.amount;
                       } else {
                         ref
                             .read(paymentProvider.notifier)
