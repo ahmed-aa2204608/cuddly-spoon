@@ -53,7 +53,6 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
   void _filterPayments() {
     final searchQuery = _searchController.text.toLowerCase();
 
-    // Filter based on payment mode or cheque number
     setState(() {
       if (searchQuery.isEmpty) {
         filteredPayments = allPayments;
@@ -161,7 +160,7 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
 
   void _deletePayment(WidgetRef ref, Payment payment) {
     ref.read(paymentProvider.notifier).deletePayment(payment.id);
-    _filterPayments(); // Update search results after deletion
+    _filterPayments();
   }
 
   void _showAddPaymentDialog(BuildContext context, WidgetRef ref,
@@ -178,6 +177,8 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
     File? _chequeImage =
         payment?.chequeImageUri != null ? File(payment!.chequeImageUri!) : null;
     final ImagePicker _picker = ImagePicker();
+
+    final _formKey = GlobalKey<FormState>();
 
     Future<void> _pickImage() async {
       final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
@@ -196,86 +197,107 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
             return AlertDialog(
               title: Text(payment == null ? 'Add New Payment' : 'Edit Payment'),
               content: SingleChildScrollView(
-                child: Column(
-                  children: [
-                    DropdownButtonFormField<String>(
-                      value: _selectedPaymentMode,
-                      decoration: InputDecoration(labelText: 'Payment Mode'),
-                      items: paymentModes.map((String mode) {
-                        return DropdownMenuItem<String>(
-                          value: mode,
-                          child: Text(mode),
-                        );
-                      }).toList(),
-                      onChanged: (newValue) {
-                        setDialogState(() {
-                          _selectedPaymentMode = newValue!;
-                        });
-                      },
-                    ),
-                    if (_selectedPaymentMode == 'Cheque') ...[
-                      TextField(
-                        controller: _chequeNoController,
-                        decoration: InputDecoration(labelText: 'Cheque No'),
-                        keyboardType: TextInputType.number,
-                      ),
-                      TextField(
-                        controller: _amountController,
-                        decoration: InputDecoration(labelText: 'Amount'),
-                        keyboardType: TextInputType.number,
-                      ),
-                      TextField(
-                        controller: _drawerController,
-                        decoration: InputDecoration(labelText: 'Drawer'),
-                      ),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
                       DropdownButtonFormField<String>(
-                        isExpanded: true,
-                        value: _selectedBank,
-                        decoration: InputDecoration(labelText: 'Drawer Bank'),
-                        items: banks.map((String bank) {
+                        value: _selectedPaymentMode,
+                        decoration: InputDecoration(labelText: 'Payment Mode'),
+                        items: paymentModes.map((String mode) {
                           return DropdownMenuItem<String>(
-                            value: bank,
-                            child: Text(bank),
+                            value: mode,
+                            child: Text(mode),
                           );
                         }).toList(),
                         onChanged: (newValue) {
                           setDialogState(() {
-                            _selectedBank = newValue!;
+                            _selectedPaymentMode = newValue!;
                           });
                         },
+                        validator: (value) => value == null || value.isEmpty
+                            ? 'Select a mode'
+                            : null,
                       ),
-                      Text('Status: Awaiting',
-                          style: const TextStyle(
-                              fontSize: 15, fontFamily: 'CustomFont')),
-                      Text('Received Date: ${formatDate(DateTime.now())}'),
-                      TextField(
-                        style: const TextStyle(
-                            fontSize: 15, fontFamily: 'CustomFont'),
-                        controller: _dueDateController,
-                        decoration:
-                            InputDecoration(labelText: 'Due Date (YYYY-MM-DD)'),
-                      ),
-                      TextButton.icon(
-                        icon: Icon(Icons.image),
-                        label: Text('Upload Cheque Image',
-                            style: const TextStyle(
-                                fontSize: 15, fontFamily: 'CustomFont')),
-                        onPressed: _pickImage,
-                      ),
-                      if (_chequeImage != null)
-                        Image.file(_chequeImage!, height: 100),
-                    ],
-                    if (_selectedPaymentMode == 'Bank transfer' ||
-                        _selectedPaymentMode == 'Credit card') ...[
-                      TextField(
-                        style: const TextStyle(
-                            fontSize: 15, fontFamily: 'CustomFont'),
+                      TextFormField(
                         controller: _amountController,
                         decoration: InputDecoration(labelText: 'Amount'),
                         keyboardType: TextInputType.number,
+                        validator: (value) {
+                          final amount = double.tryParse(value ?? '');
+                          if (amount == null || amount <= 0) {
+                            return 'Enter a valid positive amount';
+                          }
+                          return null;
+                        },
                       ),
+                      if (_selectedPaymentMode == 'Cheque') ...[
+                        TextFormField(
+                          controller: _chequeNoController,
+                          decoration: InputDecoration(labelText: 'Cheque No'),
+                          keyboardType: TextInputType.number,
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Cheque No is required';
+                            }
+                            return null;
+                          },
+                        ),
+                        TextFormField(
+                          controller: _drawerController,
+                          decoration: InputDecoration(labelText: 'Drawer'),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Drawer name is required';
+                            }
+                            return null;
+                          },
+                        ),
+                        DropdownButtonFormField<String>(
+                          isExpanded: true,
+                          value: _selectedBank,
+                          decoration: InputDecoration(labelText: 'Drawer Bank'),
+                          items: banks.map((String bank) {
+                            return DropdownMenuItem<String>(
+                              value: bank,
+                              child: Text(bank),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            setDialogState(() {
+                              _selectedBank = newValue!;
+                            });
+                          },
+                          validator: (value) => value == null || value.isEmpty
+                              ? 'Select a bank'
+                              : null,
+                        ),
+                        TextFormField(
+                          controller: _dueDateController,
+                          decoration: InputDecoration(
+                              labelText: 'Due Date (YYYY-MM-DD)'),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Due Date is required';
+                            }
+                            try {
+                              DateTime.parse(value);
+                            } catch (e) {
+                              return 'Enter a valid date (YYYY-MM-DD)';
+                            }
+                            return null;
+                          },
+                        ),
+                        TextButton.icon(
+                          icon: Icon(Icons.image),
+                          label: Text('Upload Cheque Image'),
+                          onPressed: _pickImage,
+                        ),
+                        if (_chequeImage != null)
+                          Image.file(_chequeImage!, height: 100),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
               actions: [
@@ -284,12 +306,10 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 TextButton(
-                  child: Text(
-                      payment == null ? 'Add Payment' : 'Update Payment',
-                      style: const TextStyle(
-                          fontSize: 15, fontFamily: 'CustomFont')),
+                  child:
+                      Text(payment == null ? 'Add Payment' : 'Update Payment'),
                   onPressed: () {
-                    try {
+                    if (_formKey.currentState!.validate()) {
                       final newPayment = Payment(
                         id: payment?.id ??
                             DateTime.now().millisecondsSinceEpoch.toString(),
@@ -323,21 +343,13 @@ class _InvoiceDetailScreenState extends ConsumerState<InvoiceDetailScreen> {
                         ref
                             .read(paymentProvider.notifier)
                             .addPayment(newPayment);
-                        widget.invoice.amount =
-                            widget.invoice.amount - newPayment.amount;
+                        widget.invoice.amount -= newPayment.amount;
                       } else {
                         ref
                             .read(paymentProvider.notifier)
                             .updatePayment(newPayment);
                       }
                       Navigator.of(context).pop();
-                    } catch (e) {
-                      print('Error adding payment: $e');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                'Error adding payment. Please try again.')),
-                      );
                     }
                   },
                 ),

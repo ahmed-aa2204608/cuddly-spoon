@@ -206,38 +206,90 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
     final invoiceDateController = TextEditingController();
     final dueDateController = TextEditingController();
 
+    final _formKey = GlobalKey<FormState>();
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Add New Invoice'),
           content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextField(
-                  controller: customerIdController,
-                  decoration: InputDecoration(labelText: 'Customer ID'),
-                ),
-                TextField(
-                  controller: customerNameController,
-                  decoration: InputDecoration(labelText: 'Customer Name'),
-                ),
-                TextField(
-                  controller: amountController,
-                  decoration: InputDecoration(labelText: 'Amount'),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: invoiceDateController,
-                  decoration:
-                      InputDecoration(labelText: 'Invoice Date (YYYY-MM-DD)'),
-                ),
-                TextField(
-                  controller: dueDateController,
-                  decoration:
-                      InputDecoration(labelText: 'Due Date (YYYY-MM-DD)'),
-                ),
-              ],
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: customerIdController,
+                    decoration: InputDecoration(labelText: 'Customer ID'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Customer ID is required';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: customerNameController,
+                    decoration: InputDecoration(labelText: 'Customer Name'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Customer Name is required';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: amountController,
+                    decoration: InputDecoration(labelText: 'Amount'),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      final amount = double.tryParse(value ?? '');
+                      if (amount == null || amount <= 0) {
+                        return 'Enter a valid positive amount';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: invoiceDateController,
+                    decoration:
+                        InputDecoration(labelText: 'Invoice Date (YYYY-MM-DD)'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Invoice Date is required';
+                      }
+                      try {
+                        DateTime.parse(value);
+                      } catch (e) {
+                        return 'Enter a valid date (YYYY-MM-DD)';
+                      }
+                      return null;
+                    },
+                  ),
+                  TextFormField(
+                    controller: dueDateController,
+                    decoration:
+                        InputDecoration(labelText: 'Due Date (YYYY-MM-DD)'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Due Date is required';
+                      }
+                      try {
+                        final dueDate = DateTime.parse(value);
+                        final invoiceDate =
+                            DateTime.tryParse(invoiceDateController.text);
+                        if (invoiceDate != null &&
+                            dueDate.isBefore(invoiceDate)) {
+                          return 'Due Date cannot be earlier than Invoice Date';
+                        }
+                      } catch (e) {
+                        return 'Enter a valid date (YYYY-MM-DD)';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -248,17 +300,19 @@ class _InvoiceListScreenState extends ConsumerState<InvoiceListScreen> {
             TextButton(
               child: Text('Add Invoice'),
               onPressed: () {
-                final newInvoice = Invoice(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  customerId: customerIdController.text,
-                  customerName: customerNameController.text,
-                  amount: double.tryParse(amountController.text) ?? 0.0,
-                  invoiceDate: DateTime.parse(invoiceDateController.text),
-                  dueDate: DateTime.parse(dueDateController.text),
-                );
+                if (_formKey.currentState!.validate()) {
+                  final newInvoice = Invoice(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    customerId: customerIdController.text,
+                    customerName: customerNameController.text,
+                    amount: double.parse(amountController.text),
+                    invoiceDate: DateTime.parse(invoiceDateController.text),
+                    dueDate: DateTime.parse(dueDateController.text),
+                  );
 
-                ref.read(invoiceProvider.notifier).addInvoice(newInvoice);
-                Navigator.of(context).pop();
+                  ref.read(invoiceProvider.notifier).addInvoice(newInvoice);
+                  Navigator.of(context).pop();
+                }
               },
             ),
           ],
